@@ -3,6 +3,7 @@
     "name": "Storix",
     "slug": "Storix",
     "version": "1.0.0",
+    "scheme": "storix",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -23,6 +24,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ]
   }
 }
