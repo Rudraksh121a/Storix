@@ -3,6 +3,8 @@ import { useState } from "react";
 import CustomSearch from "@/components/search/customSearch";
 import { Theme } from "@/constants/theme/theme";
 import CustomAddcardComponent from "@/components/addcardcomponent/customAddcardComponent";
+import { router ,useLocalSearchParams} from "expo-router";
+import { BillItem } from "@/utils/billGenerator";
 
 const dummyData = [
   {
@@ -31,6 +33,7 @@ const dummyData = [
   },
 ];
 
+
 export default function AddCardScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [quantities, setQuantities] = useState<{ [id: string]: number }>({});
@@ -52,8 +55,15 @@ export default function AddCardScreen() {
   }, 0);
 
   const handleCreateInvoice = () => {
-    // You can navigate or generate a PDF here
-    alert("Invoice created successfully!");
+    const billItems: BillItem[] = filteredData.map((item) => ({
+      id: item.id,
+      title: item.name,
+      price: item.price,
+      quantity: quantities[item.id] || 1,
+    }));
+  
+    const billItemsParam = encodeURIComponent(JSON.stringify(billItems));
+    router.push(`/screen/createInvoice/CreateInvoice?data=${billItemsParam}`);
   };
 
   return (
