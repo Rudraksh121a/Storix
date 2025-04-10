@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Theme } from "@/constants/theme/theme";
 
 export default function TabsLayout() {
@@ -12,6 +12,9 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: Theme.Colors.surface,
           borderTopColor: Theme.Colors.border,
+          height: 60,
+          paddingBottom: 6,
+          paddingTop: 4,
         },
         tabBarLabelStyle: {
           fontFamily: Theme.Font.medium,
@@ -20,11 +23,42 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="home"
+        name="index"
         options={{
-          headerShown: false,
+          title: "Home",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="home" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="invoice"
+        options={{
+          title: "Invoice",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="shopping" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="edititem"
+        options={{
+          title: "Edit",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="pencil" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="stock"
+        options={{
+          title: "Stock",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="clipboard-list-outline"
+              color={color}
+              size={size}
+            />
           ),
         }}
       />

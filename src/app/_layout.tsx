@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 import { Inter_400Regular,Inter_500Medium,Inter_600SemiBold,Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
 import * as SplashScreen from "expo-splash-screen"
 import { useEffect } from "react";
-
+import Toast from "react-native-toast-message";
 export default function RootLayout() {
   const [fontloaded, fonterror] = useFonts({
     Inter: Inter_400Regular,
@@ -25,9 +25,11 @@ export default function RootLayout() {
   return (
     <Stack
       screenOptions={{
+        headerShown: false,
       }}
     >
     <Stack.Screen name="index" options={{title:"rudra"}}/>
+    <Toast />
     </Stack>
   );
 }
