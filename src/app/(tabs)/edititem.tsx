@@ -1,78 +1,30 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
-import { Theme } from "@/constants/theme/theme"; // or remove if not using a custom theme
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 
-export default function AddItemLoggerScreen() {
-  const [id, setId] = useState("");
-  const [image, setImage] = useState("");
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
-  const [quantity, setQuantity] = useState("");
+export default function EditItemScreen() {
+  const router = useRouter();
+  const handleAddItem = () => {
+    router.push("/screen/addItemScreen/addItemForm"); // Fixed route path
+  };
 
-  const handleLogItem = () => {
-    if (!id || !title || !price || !quantity) {
-      Alert.alert("Missing Fields", "Please fill in all fields.");
-      return;
-    }
-
-    const item = {
-      id,
-      image,
-      title,
-      price: parseFloat(price),
-      quantity: parseInt(quantity),
-    };
-
-    console.log("📦 New Item Data:\n", JSON.stringify(item, null, 2));
-    Alert.alert("Success", "Item logged to console!");
+  const handleRemoveItem = () => {
+    Alert.alert("Coming Soon", "This feature will be available soon!");
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Add Item</Text>
+      <TouchableOpacity 
+        style={styles.button}
+        onPress={handleAddItem}
+      >
+        <Text style={styles.buttonText}>Add Item</Text>
+      </TouchableOpacity>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Item ID"
-        value={id}
-        onChangeText={setId}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Image URL"
-        value={image}
-        onChangeText={setImage}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Title"
-        value={title}
-        onChangeText={setTitle}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Price"
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Quantity"
-        value={quantity}
-        onChangeText={setQuantity}
-        keyboardType="numeric"
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleLogItem}>
-        <Text style={styles.buttonText}>Log Item to Console</Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleRemoveItem}
+      >
+        <Text style={styles.buttonText}>Remove Item</Text>
       </TouchableOpacity>
     </View>
   );
@@ -81,32 +33,21 @@ export default function AddItemLoggerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
-    backgroundColor: "#f2f4f8",
-  },
-  heading: {
-    fontSize: 22,
-    fontWeight: "600",
-    marginBottom: 16,
-    color: "#333",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: "#fff",
   },
   button: {
-    backgroundColor: "#007AFF",
-    padding: 14,
+    backgroundColor: "#1a73e8",
+    padding: 15,
     borderRadius: 8,
+    width: "80%",
     alignItems: "center",
-    marginTop: 8,
+    marginVertical: 10,
   },
   buttonText: {
-    color: "#fff",
+    color: "#fff", 
+    fontSize: 16,
     fontWeight: "bold",
-  },
+  }
 });

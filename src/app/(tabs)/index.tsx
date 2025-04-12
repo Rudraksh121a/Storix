@@ -1,60 +1,96 @@
-import { Stack } from "expo-router";
-import { View, Text, StyleSheet } from "react-native";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+} from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import CustomSearch from "@/components/search/customSearch";
+import CustomCard from "@/components/itemcard/customCard";
+import { Theme } from "@/constants/theme/theme";
+import { router } from "expo-router";
 
-const dummyCart = [
-  { id: "1", name: "Milk 1L", quantity: 2, price: 45 },
-  { id: "2", name: "Bread Pack", quantity: 1, price: 30 },
-  { id: "3", name: "Peanut Butter", quantity: 3, price: 250 },
-  { id: "4", name: "Tea Pack", quantity: 1, price: 120 },
+
+// Sample data
+const invoices = [
+  {
+    id: "1",
+    image:
+      "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    title: "Milk 1L",
+    price: 45,
+    quantity: 2,
+  },
+  {
+    id: "2",
+    image:
+      "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    title: "Bread Pack",
+    price: 30,
+    quantity: 1,
+  },
+  {
+    id: "3",
+    image:
+      "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    title: "Peanut Butter",
+    price: 250,
+    quantity: 1,
+  },
+  {
+    id: "4",
+    image:
+      "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    title: "Tea Pack",
+    price: 120,
+    quantity: 3,
+  },
 ];
 
-export default function HomeScreen() {
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalQuantity, setTotalQuantity] = useState(0);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [mostExpensive, setMostExpensive] = useState<any>(null);
-  const [cheapest, setCheapest] = useState<any>(null);
+export default function ItemsScreen () {
+  const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    const itemsCount = dummyCart.length;
-    const quantitySum = dummyCart.reduce((sum, item) => sum + item.quantity, 0);
-    const priceSum = dummyCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const maxItem = dummyCart.reduce((max, item) =>
-      item.price > max.price ? item : max, dummyCart[0]
-    );
-    const minItem = dummyCart.reduce((min, item) =>
-      item.price < min.price ? item : min, dummyCart[0]
-    );
-
-    setTotalItems(itemsCount);
-    setTotalQuantity(quantitySum);
-    setTotalPrice(priceSum);
-    setMostExpensive(maxItem);
-    setCheapest(minItem);
-  }, []);
+  const filteredInvoices = invoices.filter((item) =>
+    item.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <Text style={styles.heading}>🛒 Cart Insights</Text>
+      <View style={styles.header}>
+        <View style={styles.searchContainer}>
+          <CustomSearch
+            placeholder="Search Invoices"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
 
-      <View style={styles.card}>
-        <Text style={styles.title}> Summary</Text>
-        <Text style={styles.text}>Total Items: <Text style={styles.value}>{totalItems}</Text></Text>
-        <Text style={styles.text}>Total Quantity: <Text style={styles.value}>{totalQuantity}</Text></Text>
-        <Text style={styles.text}>Total Price: <Text style={styles.value}>₹{totalPrice.toFixed(2)}</Text></Text>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => router.push("/screen/addcardSeceen/addCardScreen")}
+        >
+          <MaterialCommunityIcons name="receipt" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.title}>Highlights</Text>
-        <Text style={styles.text}>
-           Most Expensive: <Text style={styles.value}>{mostExpensive?.name} (₹{mostExpensive?.price})</Text>
-        </Text>
-        <Text style={styles.text}>
-           Cheapest: <Text style={styles.value}>{cheapest?.name} (₹{cheapest?.price})</Text>
-        </Text>
-      </View>
+      <Text style={styles.title}>Items</Text>
+
+      <FlatList
+        data={filteredInvoices}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <CustomCard
+            image={item.image}
+            title={item.title}
+            price={item.price}
+            quantity={item.quantity}
+          />
+        )}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+      />
     </View>
   );
 }
@@ -62,40 +98,33 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: "#F4F8FB",
+    backgroundColor: Theme.Colors.background,
+    padding: Theme.Spacing.md,
   },
-  heading: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#007AFF",
-    marginBottom: 25,
-    textAlign: "center",
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Theme.Spacing.sm,
   },
-  card: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+  searchContainer: {
+    flex: 1,
+    marginRight: Theme.Spacing.sm,
+  },
+  addButton: {
+    backgroundColor: Theme.Colors.primary,
+    padding: Theme.Spacing.sm,
+    borderRadius: Theme.Radius.sm,
+    justifyContent: "center",
+    alignItems: "center",
   },
   title: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#2C3E50",
-    marginBottom: 12,
+    fontFamily: Theme.Font.semiBold,
+    fontSize: Theme.Font.size.lg,
+    color: Theme.Colors.textPrimary,
+    marginBottom: Theme.Spacing.sm,
+    marginTop: Theme.Spacing.sm,
   },
-  text: {
-    fontSize: 16,
-    color: "#2C3E50",
-    marginBottom: 6,
-  },
-  value: {
-    fontWeight: "bold",
-    color: "#007AFF",
+  listContent: {
+    paddingBottom: Theme.Spacing.lg,
   },
 });
