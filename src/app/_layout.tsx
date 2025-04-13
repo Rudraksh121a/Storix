@@ -1,63 +1,70 @@
 import { Stack } from "expo-router";
-import { Inter_400Regular,Inter_500Medium,Inter_600SemiBold,Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
-import * as SplashScreen from "expo-splash-screen"
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  useFonts,
+} from "@expo-google-fonts/inter";
+import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import Toast from "react-native-toast-message";
-import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite'
-import schema from '@/utils/model/schema'
-import migrations from '@/utils/model/migrations'
-
-
-
-const adapter = new SQLiteAdapter({
-  schema,
-  // (You might want to comment it out for development purposes -- see Migrations documentation)
-  migrations,
-  // (optional database name or file system path)
-  // dbName: 'myapp',
-  // (recommended option, should work flawlessly out of the box on iOS. On Android,
-  // additional installation steps have to be taken - disable if you run into issues...)
-  jsi: true, /* Platform.OS === 'ios' */
-  // (optional, but you should implement this method)
-  onSetUpError: error => {
-    // Database failed to load -- offer the user to reload the app or log out
-  }
-})
-
-
-
-
-
-
-
+import { SQLiteProvider } from "expo-sqlite";
+import * as FileSystem from "expo-file-system";
+import { Asset } from "expo-asset";
+import * as React from "react";
+import { View } from "react-native";
 
 export default function RootLayout() {
+  const [dbLoaded, setDbLoaded] = React.useState<boolean>(false);
   const [fontloaded, fonterror] = useFonts({
     Inter: Inter_400Regular,
     InterMedium: Inter_500Medium,
     InterSemiBold: Inter_600SemiBold,
     InterBold: Inter_700Bold,
-
   });
 
+  const loadDatabase = async () => {
+    const dbName = "mySQLiteDB.db";
+    const dbAsset = require("../../assets/mySQLiteDB.db");
+    const dbUri = Asset.fromModule(dbAsset).uri;
+    const dbFilePath = `${FileSystem.documentDirectory}SQLite/${dbName}`;
+
+    const fileInfo = await FileSystem.getInfoAsync(dbFilePath);
+    if (!fileInfo.exists) {
+      await FileSystem.makeDirectoryAsync(
+        `${FileSystem.documentDirectory}SQLite`,
+        { intermediates: true }
+      );
+      await FileSystem.downloadAsync(dbUri, dbFilePath);
+    }
+  };
+
   useEffect(() => {
-    if (fontloaded || fonterror) {
+    loadDatabase()
+      .then(() => setDbLoaded(true))
+      .catch((e) => console.error(e));
+  }, []);
+
+  useEffect(() => {
+    if ((fontloaded || fonterror) && dbLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [fontloaded, fonterror]);
+  }, [fontloaded, fonterror, dbLoaded]);
 
-  if (!fontloaded && !fonterror) {
+  if (!fontloaded && !fonterror && !dbLoaded) {
     return null;
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-    <Stack.Screen name="index" options={{title:"rudra"}}/>
-    <Toast />
-    </Stack>
+    <SQLiteProvider databaseName="mySQLiteDB.db" useSuspense>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" options={{ title: "rudra" }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+        <Toast />
+      </View>
+    </SQLiteProvider>
   );
 }

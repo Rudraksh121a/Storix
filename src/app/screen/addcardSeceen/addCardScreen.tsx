@@ -1,109 +1,118 @@
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
-import { useState } from "react";
-import CustomSearch from "@/components/search/customSearch";
+import { useState, useEffect } from "react";
+import { useSQLiteContext } from "expo-sqlite";
+import { router } from "expo-router";
 import { Theme } from "@/constants/theme/theme";
+import CustomSearch from "@/components/search/customSearch";
 import CustomAddcardComponent from "@/components/addcardcomponent/customAddcardComponent";
-import { router ,useLocalSearchParams} from "expo-router";
-import { BillItem } from "@/utils/billGenerator";
+import Toast from "react-native-toast-message";
 
-const dummyData = [
-  {
-    id: "1",
-    image: "https://picsum.photos/seed/milk/200/200",
-    name: "Milk 1L",
-    price: 45,
-  },
-  {
-    id: "2",
-    image: "https://picsum.photos/seed/bread/200/200",
-    name: "Bread Pack",
-    price: 30,
-  },
-  {
-    id: "3",
-    image: "https://picsum.photos/seed/butter/200/200",
-    name: "Peanut Butter",
-    price: 250,
-  },
-  {
-    id: "4",
-    image: "https://picsum.photos/seed/tea/200/200",
-    name: "Tea Pack",
-    price: 120,
-  },
-];
-
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
 
 export default function AddCardScreen() {
+  const db = useSQLiteContext();
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [quantities, setQuantities] = useState<{ [id: string]: number }>({});
 
-  const filteredData = dummyData.filter((item) =>
+  useEffect(() => {
+    fetchCartData();
+  }, [db]);
+
+  const fetchCartData = async () => {
+    await db.withTransactionAsync(async () => {
+      const result = await db.getAllAsync(`
+        SELECT addcard.id as id, products.title as name, products.price, products.image, addcard.quantity 
+        FROM addcard 
+        JOIN products ON addcard.product_id = products.id
+      `);
+      setCartItems(result as CartItem[]);
+    });
+  };
+
+  const handleQuantityChange = async (id: string, newQuantity: number) => {
+    await db.withTransactionAsync(async () => {
+      await db.runAsync(`UPDATE addcard SET quantity = ? WHERE id = ?`, [
+        newQuantity,
+        id,
+      ]);
+      fetchCartData();
+    });
+  };
+
+  const handleRemoveItem = async (id: string) => {
+    // console.log("Removing item with id:", id); // Debug log
+
+    await db.withTransactionAsync(async () => {
+      await db.runAsync(`DELETE FROM addcard WHERE id = ?`, [id]);
+      // Update UI immediately by filtering out the removed item
+      setCartItems(prevItems => prevItems.filter(item => item.id !== id));
+
+      Toast.show({
+        type: "success",
+        text1: "Item removed from cart",
+      });
+    });
+  };
+
+  const filteredItems = cartItems.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleQuantityChange = (id: string, quantity: number) => {
-    setQuantities((prev) => ({
-      ...prev,
-      [id]: quantity,
-    }));
-  };
-
-  const totalPrice = filteredData.reduce((sum, item) => {
-    const quantity = quantities[item.id] || 1;
-    return sum + item.price * quantity;
-  }, 0);
+  const totalPrice = filteredItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
 
   const handleCreateInvoice = () => {
-    const billItems: BillItem[] = filteredData.map((item) => ({
-      id: item.id,
-      title: item.name,
-      price: item.price,
-      quantity: quantities[item.id] || 1,
-    }));
-  
-    const billItemsParam = encodeURIComponent(JSON.stringify(billItems));
-    router.push(`/screen/createInvoice/CreateInvoice?data=${billItemsParam}`);
+    router.push({
+      pathname: "/screen/invoice/invoiceScreen",
+      params: {
+        items: JSON.stringify(filteredItems),
+        total: totalPrice.toFixed(2),
+      },
+    });
   };
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Cart</Text>
+
       <CustomSearch
-        placeholder="Search Items"
+        placeholder="Search in cart"
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
 
-      <Text style={styles.heading}>Add Card</Text>
-
       <FlatList
-        data={filteredData}
-        keyExtractor={(item) => item.id}
+        data={filteredItems}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <CustomAddcardComponent
             image={item.image}
             name={item.name}
             price={item.price}
-            quantity={quantities[item.id] || 1}
-            onQuantityChange={(q) => handleQuantityChange(item.id, q)}
-            onRemove={() => {
-              setQuantities((prev) => {
-                const updated = { ...prev };
-                delete updated[item.id];
-                return updated;
-              });
-            }}
+            quantity={item.quantity}
+            onQuantityChange={(quantity) => handleQuantityChange(item.id, quantity)}
+            onRemove={() => handleRemoveItem(item.id)}
           />
         )}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No items in the cart.</Text>
+        }
+        contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
       />
 
-      {/* Total and Button */}
       <View style={styles.footer}>
         <Text style={styles.totalText}>Total: ₹{totalPrice.toFixed(2)}</Text>
-        <TouchableOpacity style={styles.button} onPress={handleCreateInvoice}>
-          <Text style={styles.buttonText}>Create Invoice</Text>
+        <TouchableOpacity style={styles.invoiceButton} onPress={handleCreateInvoice}>
+          <Text style={styles.invoiceButtonText}>Create Invoice</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -115,16 +124,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Theme.Colors.background,
     padding: Theme.Spacing.md,
-    paddingBottom: 120, // Ensure scroll under button
   },
-  heading: {
+  title: {
     fontSize: Theme.Font.size.lg,
     fontFamily: Theme.Font.semiBold,
+    marginBottom: Theme.Spacing.sm,
     color: Theme.Colors.textPrimary,
-    marginVertical: Theme.Spacing.sm,
   },
-  listContainer: {
-    paddingBottom: Theme.Spacing.md,
+  list: {
+    paddingBottom: 100,
+  },
+  emptyText: {
+    textAlign: "center",
+    fontFamily: Theme.Font.medium,
+    color: Theme.Colors.textSecondary,
+    marginTop: 40,
   },
   footer: {
     position: "absolute",
@@ -134,24 +148,25 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.Colors.surface,
     padding: Theme.Spacing.md,
     borderTopWidth: 1,
-    borderColor: "#ddd",
+    borderColor: Theme.Colors.border,
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
   totalText: {
-    fontSize: 18,
-    fontFamily: Theme.Font.medium,
-    color: Theme.Colors.textPrimary,
-    marginBottom: 10,
-  },
-  button: {
-    backgroundColor: Theme.Colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: Theme.Radius.md,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
+    fontSize: Theme.Font.size.md,
     fontFamily: Theme.Font.semiBold,
+    color: Theme.Colors.textPrimary,
+  },
+  invoiceButton: {
+    backgroundColor: Theme.Colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: Theme.Radius.sm,
+  },
+  invoiceButtonText: {
+    color: "#fff",
+    fontFamily: Theme.Font.medium,
+    fontSize: Theme.Font.size.sm,
   },
 });

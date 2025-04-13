@@ -1,0 +1,142 @@
+[
+  {
+    "id": "1",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Milk 1L",
+    "price": 45,
+    "quantity": 2
+  },
+  {
+    "id": "2", 
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Bread Pack",
+    "price": 30,
+    "quantity": 1
+  },
+  {
+    "id": "3",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ", 
+    "title": "Peanut Butter",
+    "price": 250,
+    "quantity": 1
+  },
+  {
+    "id": "4",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Tea Pack", 
+    "price": 120,
+    "quantity": 3
+  },
+  {
+    "id": "5",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Coffee Beans",
+    "price": 350,
+    "quantity": 1
+  },
+  {
+    "id": "6",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Sugar 1kg",
+    "price": 40,
+    "quantity": 2
+  },
+  {
+    "id": "7",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Rice 5kg",
+    "price": 280,
+    "quantity": 1
+  },
+  {
+    "id": "8",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Cooking Oil 1L",
+    "price": 180,
+    "quantity": 2
+  },
+  {
+    "id": "9",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Eggs (12)",
+    "price": 75,
+    "quantity": 1
+  },
+  {
+    "id": "10",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Cheese Block",
+    "price": 220,
+    "quantity": 1
+  },
+  {
+    "id": "11",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Butter 500g",
+    "price": 240,
+    "quantity": 1
+  },
+  {
+    "id": "12",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Yogurt Pack",
+    "price": 85,
+    "quantity": 2
+  },
+  {
+    "id": "13",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Pasta 500g",
+    "price": 65,
+    "quantity": 3
+  },
+  {
+    "id": "14",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Tomato Sauce",
+    "price": 95,
+    "quantity": 2
+  },
+  {
+    "id": "15",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Cereal Box",
+    "price": 175,
+    "quantity": 1
+  },
+  {
+    "id": "16",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Honey Jar",
+    "price": 160,
+    "quantity": 1
+  },
+  {
+    "id": "17",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Jam Bottle",
+    "price": 130,
+    "quantity": 1
+  },
+  {
+    "id": "18",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Chocolate Bar",
+    "price": 55,
+    "quantity": 4
+  },
+  {
+    "id": "19",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Biscuit Pack",
+    "price": 35,
+    "quantity": 3
+  },
+  {
+    "id": "20",
+    "image": "https://fastly.picsum.photos/id/2/5000/3333.jpg?hmac=_KDkqQVttXw_nM-RyJfLImIbafFrqLsuGO5YuHqD-qQ",
+    "title": "Chips Pack",
+    "price": 25,
+    "quantity": 5
+  }
+]

@@ -32,16 +32,16 @@ export default function TabsLayout() {
       }}
     />
       <Tabs.Screen
-        name="edititem"
+        name="items"
         options={{
-          title: "Edit",
+          title: "items",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="pencil" color={color} size={size} />
           ),
         }}
       />
         <Tabs.Screen
-          name="items"
+          name="analysis"
           options={{
             title: "Analysis",
             tabBarIcon: ({ color, size }) => (
@@ -49,19 +49,6 @@ export default function TabsLayout() {
             ),
           }}
         />
-      <Tabs.Screen
-        name="stock"
-        options={{
-          title: "Stock",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons
-              name="clipboard-list-outline"
-              color={color}
-              size={size}
-            />
-          ),
-        }}
-      />
     </Tabs>
   );
 }

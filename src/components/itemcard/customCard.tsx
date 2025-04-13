@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
-import Toast from "react-native-toast-message";
 import { Theme } from "@/constants/theme/theme";
 
 type CustomCardProps = {
@@ -7,6 +6,7 @@ type CustomCardProps = {
   title: string;
   price: number;
   quantity: number;
+  onPress: () => void;
 };
 
 export default function CustomCard({
@@ -14,28 +14,20 @@ export default function CustomCard({
   title,
   price,
   quantity,
+  onPress,
 }: CustomCardProps) {
-  const handleBuy = () => {
-    Toast.show({
-      type: "success",
-      text1: `${title} added to invoice ✅`,
-      visibilityTime: 2000,
-      position: "bottom",
-    });
-  };
-
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={onPress}>
       <Image source={{ uri: image }} style={styles.image} resizeMode="cover" />
       <View style={styles.details}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.price}>₹ {price.toFixed(2)}</Text>
-        <Text style={styles.quantity}>Qty: {quantity}</Text>
+        <Text style={styles.quantity}>Stock: {quantity}</Text>
       </View>
-      <TouchableOpacity style={styles.buyButton} onPress={handleBuy}>
+      <View style={styles.buyButton}>
         <Text style={styles.buyButtonText}>Buy</Text>
-      </TouchableOpacity>
-    </View>
+      </View>
+    </TouchableOpacity>
   );
 }
 

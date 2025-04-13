@@ -7,18 +7,24 @@ import {
   Dimensions,
   Image,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Theme } from "@/constants/theme/theme";
-import { useRef, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { LinearGradient } from "expo-linear-gradient";
+import { SQLiteProvider } from "expo-sqlite";
 
 const { width, height } = Dimensions.get("window");
+
 
 export default function FirstScreen() {
   const router = useRouter();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+
+  
 
   useEffect(() => {
     // Hide status bar when component mounts
@@ -50,7 +56,11 @@ export default function FirstScreen() {
     }).start(() => router.replace("/(tabs)"));
   };
 
+
+    
+
   return (
+    <SQLiteProvider databaseName="mySQLiteDB.db" useSuspense >
     <LinearGradient
       colors={["#007AFF", "#0040ff", "#001f7f"]}
       style={styles.container}
@@ -60,22 +70,27 @@ export default function FirstScreen() {
           <Text style={styles.title}>Storix</Text>
           <View style={styles.underline} />
         </View>
-        
+
         <Text style={styles.subtitle}>
           Smart Inventory & Cart Manager{"\n"}for Modern Businesses
         </Text>
 
         <View style={styles.imageContainer}>
-          <Image 
-            source={require("../../assets/icon.png")} 
+          <Image
+            source={require("../../assets/icon.png")}
             style={styles.logo}
           />
         </View>
 
-        <Animated.View style={[styles.buttonContainer, { transform: [{ scale: scaleAnim }] }]}>
-          <Pressable 
-            onPressIn={onPressIn} 
-            onPressOut={onPressOut} 
+        <Animated.View
+          style={[
+            styles.buttonContainer,
+            { transform: [{ scale: scaleAnim }] },
+          ]}
+        >
+          <Pressable
+            onPressIn={onPressIn}
+            onPressOut={onPressOut}
             style={styles.button}
           >
             <Text style={styles.buttonText}>Get Started</Text>
@@ -83,6 +98,7 @@ export default function FirstScreen() {
         </Animated.View>
       </Animated.View>
     </LinearGradient>
+    </SQLiteProvider>
   );
 }
 
