@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import CustomCard from "@/components/itemcard/customCard";
 import { Theme } from "@/constants/theme/theme";
 import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function ItemsScreen() {
   const db = useSQLiteContext();
@@ -23,9 +24,11 @@ export default function ItemsScreen() {
   const [priceFilter, setPriceFilter] = useState<"asc" | "desc" | null>(null);
   const [cardCount, setCardCount] = useState(0);
 
-  useEffect(() => {
-    fetchData();
-  }, [db]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [db])
+  );
 
   const fetchData = async () => {
     await db.withTransactionAsync(async () => {
@@ -168,7 +171,9 @@ export default function ItemsScreen() {
               styles.filterButton,
               priceFilter === "desc" && styles.filterButtonActive,
             ]}
-            onPress={() => setPriceFilter(priceFilter === "desc" ? null : "desc")}
+            onPress={() =>
+              setPriceFilter(priceFilter === "desc" ? null : "desc")
+            }
           >
             <Text
               style={[
@@ -277,3 +282,4 @@ const styles = StyleSheet.create({
     color: Theme.Colors.surface,
   },
 });
+ 
