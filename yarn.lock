@@ -1170,6 +1170,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@config-plugins/react-native-ble-plx@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "@config-plugins/react-native-ble-plx@npm:7.0.0"
+  peerDependencies:
+    expo: ^49
+  checksum: 4efafba84cebb05b73f42c1cd2f2dbcdd90c9e4831ba91fadab41d3fce296c3c53405181e4cdffa2f9f5c8253e3f4f98d5d1903ddf38fd4a0360e0813ea8fad6
+  languageName: node
+  linkType: hard
+
 "@egjs/hammerjs@npm:^2.0.17":
   version: 2.0.17
   resolution: "@egjs/hammerjs@npm:2.0.17"
@@ -8899,6 +8908,7 @@ __metadata:
   resolution: "storix@workspace:."
   dependencies:
     "@babel/core": ^7.25.2
+    "@config-plugins/react-native-ble-plx": ^7.0.0
     "@expo-google-fonts/inter": ^0.3.0
     "@morrowdigital/watermelondb-expo-plugin": ^2.3.3
     "@nozbe/watermelondb": ^0.28.0

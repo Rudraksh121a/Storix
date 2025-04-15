@@ -1,25 +1,41 @@
 import React, { useState } from "react";
-import { View, Image, TextInput, StyleSheet, Alert, Text, TouchableOpacity, Modal } from "react-native";
+import {
+  View,
+  Image,
+  TextInput,
+  StyleSheet,
+  Alert,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Theme } from "@/constants/theme/theme";
 import { Ionicons } from "@expo/vector-icons";
-
+import { useSQLiteContext } from "expo-sqlite";
+import { router } from "expo-router";
+type Product = {
+  id: number;
+  image: string;
+  title: string;
+  price: number;
+  quantity: number;
+};
 export default function ItemForm() {
+  const db = useSQLiteContext();
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const pickImage = async (type: 'camera' | 'gallery') => {
+  const pickImage = async (type: "camera" | "gallery") => {
     try {
       let permissionResult;
       let result;
 
-      if (type === 'camera') {
+      if (type === "camera") {
         permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-        if (permissionResult.granted === false) {
-          Alert.alert("Permission required", "You need to grant camera permissions to use this feature.");
+        if (!permissionResult.granted) {
+          Alert.alert("Permission required", "Camera access is needed.");
           return;
         }
         result = await ImagePicker.launchCameraAsync({
@@ -30,8 +46,8 @@ export default function ItemForm() {
         });
       } else {
         permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (permissionResult.granted === false) {
-          Alert.alert("Permission required", "You need to grant gallery permissions to use this feature.");
+        if (!permissionResult.granted) {
+          Alert.alert("Permission required", "Gallery access is needed.");
           return;
         }
         result = await ImagePicker.launchImageLibraryAsync({
@@ -51,22 +67,35 @@ export default function ItemForm() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title || !price || !quantity || !imageUri) {
       Alert.alert("All fields are required", "Please fill out all fields and select an image.");
       return;
     }
 
-    const formData = {
-      id: new Date().toISOString(),
-      image: imageUri,
-      title,
-      price: parseFloat(price),
-      quantity: parseInt(quantity),
-    };
+    try {
+      await db.withTransactionAsync(async () => {
+        // Get the last ID from the table
+        const lastItem = await db.getFirstAsync<{ id: number }>("SELECT id FROM products ORDER BY id DESC");
+        const newId = lastItem ? lastItem.id + 1 : 1;
 
-    console.log("Form Data:", formData);
-    Alert.alert("Success", `Item ${title} added successfully!`);
+        // Manually insert with new ID
+        await db.runAsync(
+          `INSERT INTO products (id, image, title, price, quantity) VALUES (?, ?, ?, ?, ?)`,
+          [newId, imageUri, title, parseFloat(price), parseInt(quantity)]
+        );
+
+        Alert.alert("Success", `Item "${title}" added successfully!`, [
+          {
+            text: "OK",
+            onPress: () => router.push("/(tabs)"),
+          },
+        ]);
+      });
+    } catch (error) {
+      console.error("Error adding item:", error);
+      Alert.alert("Error", "Failed to add item to database");
+    }
   };
 
   return (
@@ -81,20 +110,14 @@ export default function ItemForm() {
             <Text style={styles.placeholderText}>No image selected</Text>
           </View>
         )}
-        
+
         <View style={styles.imageButtonsContainer}>
-          <TouchableOpacity 
-            style={styles.imageButton} 
-            onPress={() => pickImage('camera')}
-          >
+          <TouchableOpacity style={styles.imageButton} onPress={() => pickImage("camera")}>
             <Ionicons name="camera" size={24} color={Theme.Colors.primary} />
             <Text style={styles.buttonLabel}>Camera</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.imageButton}
-            onPress={() => pickImage('gallery')}
-          >
+          <TouchableOpacity style={styles.imageButton} onPress={() => pickImage("gallery")}>
             <Ionicons name="images" size={24} color={Theme.Colors.primary} />
             <Text style={styles.buttonLabel}>Gallery</Text>
           </TouchableOpacity>
@@ -145,24 +168,24 @@ const styles = StyleSheet.create({
     fontFamily: Theme.Font.bold,
     color: Theme.Colors.textPrimary,
     marginBottom: Theme.Spacing.lg,
-    textAlign: 'center',
+    textAlign: "center",
   },
   imagePickerContainer: {
     marginBottom: Theme.Spacing.lg,
   },
   image: {
-    width: '100%',
+    width: "100%",
     height: 200,
     borderRadius: Theme.Radius.lg,
     marginBottom: Theme.Spacing.md,
   },
   placeholderContainer: {
-    width: '100%',
+    width: "100%",
     height: 200,
     backgroundColor: Theme.Colors.surface,
     borderRadius: Theme.Radius.lg,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: Theme.Spacing.md,
     borderWidth: 1,
     borderColor: Theme.Colors.border,
@@ -172,16 +195,16 @@ const styles = StyleSheet.create({
     fontFamily: Theme.Font.medium,
   },
   imageButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginTop: Theme.Spacing.sm,
   },
   imageButton: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: Theme.Colors.surface,
     padding: Theme.Spacing.md,
     borderRadius: Theme.Radius.md,
-    width: '45%',
+    width: "45%",
   },
   buttonLabel: {
     marginTop: Theme.Spacing.xs,
@@ -189,7 +212,7 @@ const styles = StyleSheet.create({
     fontFamily: Theme.Font.medium,
   },
   input: {
-    width: '100%',
+    width: "100%",
     backgroundColor: Theme.Colors.surface,
     borderRadius: Theme.Radius.md,
     padding: Theme.Spacing.md,
@@ -210,6 +233,6 @@ const styles = StyleSheet.create({
     color: Theme.Colors.surface,
     fontSize: Theme.Font.size.md,
     fontFamily: Theme.Font.semiBold,
-    textAlign: 'center',
-  }
+    textAlign: "center",
+  },
 });

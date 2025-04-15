@@ -25,7 +25,7 @@ export default function RootLayout() {
   });
 
   const loadDatabase = async () => {
-    const dbName = "mySQLiteDB.db";
+    const dbName = ".db";
     const dbAsset = require("../../assets/mySQLiteDB.db");
     const dbUri = Asset.fromModule(dbAsset).uri;
     const dbFilePath = `${FileSystem.documentDirectory}SQLite/${dbName}`;

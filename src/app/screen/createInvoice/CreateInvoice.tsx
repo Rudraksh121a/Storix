@@ -1,56 +1,53 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Share } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { generateInvoicePDF } from "@/utils/billGenerator";
 import { BillItem } from "@/utils/billGenerator";
 import { Theme } from "@/constants/theme/theme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSQLiteContext } from "expo-sqlite";
+import { useState, useEffect } from "react";
+import { useNavigation } from '@react-navigation/native';
 
 export default function CreateInvoice() {
-  const { data } = useLocalSearchParams();
+  const db = useSQLiteContext();
+  const navigation = useNavigation();
 
-  if (!data) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>No invoice data found</Text>
-      </View>
-    );
-  }
+  const fetchBillItems = async () => {
+    const result = await db.getAllAsync<BillItem>("SELECT id, price, product_id, quantity, title FROM addcard");
+    return result;
+  };
 
-  let billItems: BillItem[] = [];
+  const [billItems, setBillItems] = useState<BillItem[]>([]);
 
-  try {
-    billItems = JSON.parse(decodeURIComponent(data as string));
-  } catch (error) {
-    console.error("❌ Error decoding invoice data:", error);
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>Failed to parse bill data</Text>
-      </View>
-    );
-  }
+  // Fetch bill items when the component mounts
+  useEffect(() => {
+    const getItems = async () => {
+      const items = await fetchBillItems();
+      setBillItems(items);
+    };
+    
+    getItems();
+  }, []);
 
   const total = billItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const handleShare = async () => {
-    try {
-      const message = `Invoice Details:\n\n${billItems.map(item => 
-        `${item.title}\nQty: ${item.quantity} x ₹${item.price} = ₹${item.quantity * item.price}`
-      ).join('\n\n')}\n\nTotal Amount: ₹${total.toFixed(2)}`;
-      
-      await Share.share({
-        message,
-        title: "Invoice Details"
-      });
-    } catch (error) {
-      console.error(error);
-    }
+  const handleDownloadPDF = () => {
+    // Call PDF generation
+    generateInvoicePDF(billItems);
   };
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={Theme.Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Invoice</Text>
+      </View>
+
       <ScrollView style={styles.preview}>
         <Text style={styles.heading}>Invoice Preview</Text>
-        
+
         <View style={styles.invoiceHeader}>
           <Text style={styles.invoiceTitle}>INVOICE</Text>
           <Text style={styles.invoiceDate}>Date: {new Date().toLocaleDateString()}</Text>
@@ -77,14 +74,9 @@ export default function CreateInvoice() {
           <Text style={styles.totalAmount}>₹{total.toFixed(2)}</Text>
         </View>
 
-        <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>Tax (18%)</Text>
-          <Text style={styles.totalAmount}>₹{(total * 0.18).toFixed(2)}</Text>
-        </View>
-
         <View style={[styles.totalContainer, styles.grandTotal]}>
           <Text style={styles.grandTotalLabel}>Grand Total</Text>
-          <Text style={styles.grandTotalAmount}>₹{(total * 1.18).toFixed(2)}</Text>
+          <Text style={styles.grandTotalAmount}>₹{total.toFixed(2)}</Text>
         </View>
 
         <View style={styles.footer}>
@@ -94,17 +86,10 @@ export default function CreateInvoice() {
       </ScrollView>
 
       <View style={styles.actionButtons}>
-        <TouchableOpacity 
-          style={styles.button} 
-          onPress={handleShare}
-        >
-          <MaterialCommunityIcons name="share-variant" size={24} color="#fff" />
-          <Text style={styles.buttonText}>Share</Text>
-        </TouchableOpacity>
-
+        {/* Download PDF Button */}
         <TouchableOpacity 
           style={styles.button}
-          onPress={() => generateInvoicePDF(billItems)}
+          onPress={handleDownloadPDF}
         >
           <MaterialCommunityIcons name="download" size={24} color="#fff" />
           <Text style={styles.buttonText}>Download PDF</Text>
@@ -119,10 +104,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Theme.Colors.background,
   },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Theme.Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Theme.Colors.border,
+  },
+  headerTitle: {
+    fontSize: Theme.Font.size.xl,
+    fontFamily: Theme.Font.bold,
+    color: Theme.Colors.textPrimary,
+    marginLeft: Theme.Spacing.sm,
   },
   preview: {
     flex: 1,
@@ -236,7 +229,7 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     padding: Theme.Spacing.md,
     backgroundColor: Theme.Colors.surface,
     borderTopWidth: 1,
@@ -249,6 +242,7 @@ const styles = StyleSheet.create({
     paddingVertical: Theme.Spacing.sm,
     paddingHorizontal: Theme.Spacing.lg,
     borderRadius: Theme.Radius.md,
+    marginHorizontal: Theme.Spacing.sm,
   },
   buttonText: {
     color: '#fff',
@@ -256,9 +250,4 @@ const styles = StyleSheet.create({
     fontFamily: Theme.Font.medium,
     marginLeft: Theme.Spacing.sm,
   },
-  errorText: {
-    fontSize: Theme.Font.size.lg,
-    fontFamily: Theme.Font.medium,
-    color: Theme.Colors.error,
-  }
 });

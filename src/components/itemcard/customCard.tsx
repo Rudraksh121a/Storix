@@ -17,17 +17,25 @@ export default function CustomCard({
   onPress,
 }: CustomCardProps) {
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
+    <View style={styles.card}>
       <Image source={{ uri: image }} style={styles.image} resizeMode="cover" />
       <View style={styles.details}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.price}>₹ {price.toFixed(2)}</Text>
-        <Text style={styles.quantity}>Stock: {quantity}</Text>
+        <Text style={styles.quantity}>
+          Stock: {quantity > 0 ? quantity : "Out of stock"}
+        </Text>
       </View>
-      <View style={styles.buyButton}>
-        <Text style={styles.buyButtonText}>Buy</Text>
-      </View>
-    </TouchableOpacity>
+      {quantity > 0 ? (
+        <TouchableOpacity style={styles.buyButton} onPress={onPress}>
+          <Text style={styles.buyButtonText}>Buy</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={[styles.buyButton, styles.disabledButton]}>
+          <Text style={styles.buyButtonText}>Out of Stock</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -75,6 +83,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Theme.Spacing.md,
     paddingVertical: Theme.Spacing.xs,
     borderRadius: Theme.Radius.sm,
+  },
+  disabledButton: {
+    backgroundColor: Theme.Colors.textSecondary,
   },
   buyButtonText: {
     fontFamily: Theme.Font.medium,

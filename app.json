@@ -27,6 +27,8 @@
     },
     "plugins": [
       "expo-router",
+      "@config-plugins/react-native-ble-plx"
+      ,
       "expo-font",
       [
         "expo-sqlite",

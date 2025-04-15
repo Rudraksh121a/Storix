@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,113 +11,132 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomSearch from "@/components/search/customSearch";
 import CustomCard from "@/components/itemcard/customCard";
 import { Theme } from "@/constants/theme/theme";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
-import { useFocusEffect } from "@react-navigation/native";
+import Toast from "react-native-toast-message";
+
+interface Product {
+  id: number;
+  image: string;
+  title: string;
+  price: number;
+  quantity: number;
+}
 
 export default function ItemsScreen() {
   const db = useSQLiteContext();
-
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [items, setItems] = useState<any[]>([]);
   const [priceFilter, setPriceFilter] = useState<"asc" | "desc" | null>(null);
-  const [cardCount, setCardCount] = useState(0);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    createTables();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      fetchData();
-    }, [db])
+      fetchProducts();
+    }, [])
   );
 
-  const fetchData = async () => {
-    await db.withTransactionAsync(async () => {
-      const addcardResult = await db.getAllAsync(`SELECT * FROM addcard`);
-      setCardCount(addcardResult.length);
+  const createTables = async () => {
+    try {
+      await db.runAsync(`
+        CREATE TABLE IF NOT EXISTS products (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          image TEXT,
+          title TEXT,
+          price REAL,
+          quantity INTEGER
+        )
+      `);
 
-      const result = await db.getAllAsync(`SELECT * FROM products`);
-      setItems(result);
-    });
+      await db.runAsync(`
+        CREATE TABLE IF NOT EXISTS addcard (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_id INTEGER,
+          title TEXT,
+          price REAL,
+          image TEXT,
+          quantity INTEGER,
+          FOREIGN KEY (product_id) REFERENCES products(id)
+        );
+      `);
+    } catch (error) {
+      console.error("Error creating tables:", error);
+    }
   };
 
-  const filteredAndSortedItems = items
+  const fetchProducts = async () => {
+    try {
+      const result = await db.getAllAsync<Product>("SELECT * FROM products");
+      setProducts(result);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  const handleAddToCart = async (item: Product) => {
+    if (!item.id || !item.title || !item.price) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Product",
+        text2: "Product details are missing. Please try again.",
+      });
+      return;
+    }
+
+    try {
+      const result = await db.getAllAsync(
+        `SELECT * FROM addcard WHERE product_id = ?`,
+        [item.id]
+      );
+
+      if (result.length > 0) {
+        Toast.show({
+          type: "info",
+          text1: "Item already in cart",
+          text2: `${item.title} is already in your cart.`,
+        });
+        return;
+      }
+
+      await db.runAsync(
+        `INSERT INTO addcard (product_id, title, price, image, quantity) VALUES (?, ?, ?, ?, ?)`,
+        [item.id, item.title, item.price, item.image, 1]
+      );
+
+      Toast.show({
+        type: "success",
+        text1: "Added to cart",
+        text2: `${item.title} has been added to your cart`,
+      });
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to add to cart",
+        text2: "Please try again",
+      });
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchProducts();
+    setRefreshing(false);
+  };
+
+  const filteredAndSortedItems = products
     .filter((item) =>
       item.title?.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
-      if (priceFilter === "asc") {
-        return a.price - b.price;
-      } else if (priceFilter === "desc") {
-        return b.price - a.price;
-      }
+      if (priceFilter === "asc") return a.price - b.price;
+      if (priceFilter === "desc") return b.price - a.price;
       return 0;
     });
-
-  const handleItemPress = async (id: string) => {
-    // Check if item already exists in cart
-    const existingItem = await db.getAllAsync(
-      `SELECT * FROM addcard WHERE product_id = ?`,
-      [id]
-    );
-
-    if (existingItem.length > 0) {
-      // If item exists, increment quantity
-      await db.withTransactionAsync(async () => {
-        await db.runAsync(
-          `UPDATE addcard SET quantity = quantity + 1 WHERE product_id = ?`,
-          [id]
-        );
-        const addcardResult = await db.getAllAsync(`SELECT * FROM addcard`);
-        setCardCount(addcardResult.length);
-      });
-    } else {
-      // If item doesn't exist, add new entry
-      const updated = [...selectedIds, id];
-      setSelectedIds(updated);
-
-      await db.withTransactionAsync(async () => {
-        await db.runAsync(
-          `INSERT INTO addcard (product_id, quantity) VALUES (?, ?)`,
-          [id, 1]
-        );
-        const addcardResult = await db.getAllAsync(`SELECT * FROM addcard`);
-        setCardCount(addcardResult.length);
-      });
-    }
-  };
-
-  const handleBuyPress = async (item: any) => {
-    // Check if item already exists in cart
-    const existingItem = await db.getAllAsync(
-      `SELECT * FROM addcard WHERE product_id = ?`,
-      [item.id]
-    );
-
-    if (existingItem.length > 0) {
-      // If item exists, increment quantity
-      await db.withTransactionAsync(async () => {
-        await db.runAsync(
-          `UPDATE addcard SET quantity = quantity + 1 WHERE product_id = ?`,
-          [item.id]
-        );
-        const addcardResult = await db.getAllAsync(`SELECT * FROM addcard`);
-        setCardCount(addcardResult.length);
-      });
-    } else {
-      // If item doesn't exist, add new entry
-      const updated = [...selectedIds, item.id];
-      setSelectedIds(updated);
-
-      await db.withTransactionAsync(async () => {
-        await db.runAsync(
-          `INSERT INTO addcard (product_id, quantity) VALUES (?, ?)`,
-          [item.id, 1]
-        );
-        const addcardResult = await db.getAllAsync(`SELECT * FROM addcard`);
-        setCardCount(addcardResult.length);
-      });
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -136,16 +155,11 @@ export default function ItemsScreen() {
             onPress={() => router.push("/screen/addcardSeceen/addCardScreen")}
           >
             <MaterialCommunityIcons name="receipt" size={24} color="#fff" />
-            {cardCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{cardCount}</Text>
-              </View>
-            )}
           </TouchableOpacity>
         </View>
       </View>
 
-      <Text style={styles.title}>Items</Text>
+      <Text style={styles.title}>Items ({products.length})</Text>
 
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -187,21 +201,29 @@ export default function ItemsScreen() {
         </ScrollView>
       </View>
 
-      <FlatList
-        data={filteredAndSortedItems}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <CustomCard
-            image={item.image}
-            title={item.title}
-            price={item.price}
-            quantity={item.quantity}
-            onPress={() => handleItemPress(item.id)}
-          />
-        )}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-      />
+      {products.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No items available</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredAndSortedItems}
+          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+          renderItem={({ item }) => (
+            <CustomCard
+              image={item.image}
+              title={item.title}
+              price={item.price}
+              onPress={() => handleAddToCart(item)}
+              quantity={item.quantity}
+            />
+          )}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
     </View>
   );
 }
@@ -230,23 +252,6 @@ const styles = StyleSheet.create({
     borderRadius: Theme.Radius.sm,
     justifyContent: "center",
     alignItems: "center",
-  },
-  badge: {
-    position: "absolute",
-    top: -8,
-    right: -8,
-    backgroundColor: Theme.Colors.error,
-    borderRadius: 12,
-    minWidth: 20,
-    height: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 12,
-    fontFamily: Theme.Font.medium,
   },
   title: {
     fontFamily: Theme.Font.semiBold,
@@ -281,5 +286,14 @@ const styles = StyleSheet.create({
   filterButtonTextActive: {
     color: Theme.Colors.surface,
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    fontFamily: Theme.Font.medium,
+    fontSize: Theme.Font.size.lg,
+    color: Theme.Colors.textSecondary,
+  },
 });
- 

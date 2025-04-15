@@ -1,21 +1,49 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, Alert } from "react-native";
-import { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  Image,
+  Alert,
+} from "react-native";
+import { useState, useEffect } from "react";
 import { Theme } from "@/constants/theme/theme";
 import CustomSearch from "@/components/search/customSearch";
-import data from "../../../../assets/data/data.json";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { useSQLiteContext } from "expo-sqlite";
+import { useRouter } from "expo-router";
 
 export default function EditItemScreen() {
+  const db = useSQLiteContext();
+  const router = useRouter();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [items, setItems] = useState<any[]>([]);
 
-  const filteredItems = data.filter((item) =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const fetchItems = async () => {
+    try {
+      const result = await db.getAllAsync(`SELECT * FROM products`);
+      setItems(result);
+    } catch (error) {
+      console.error("Error fetching items:", error);
+      Alert.alert("Error", "Failed to fetch items");
+    }
+  };
+
+  const filteredItems = items.filter((item) =>
+    item.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleItemSelect = (item: any) => {
@@ -26,17 +54,18 @@ export default function EditItemScreen() {
     setImageUri(item.image);
   };
 
-  const pickImage = async (type: 'camera' | 'gallery') => {
+  const pickImage = async (type: "camera" | "gallery") => {
     try {
       let permissionResult;
       let result;
 
-      if (type === 'camera') {
+      if (type === "camera") {
         permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-        if (permissionResult.granted === false) {
-          Alert.alert("Permission required", "You need to grant camera permissions to use this feature.");
+        if (!permissionResult.granted) {
+          Alert.alert("Permission required", "Camera permission is needed.");
           return;
         }
+
         result = await ImagePicker.launchCameraAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
           allowsEditing: true,
@@ -45,10 +74,11 @@ export default function EditItemScreen() {
         });
       } else {
         permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (permissionResult.granted === false) {
-          Alert.alert("Permission required", "You need to grant gallery permissions to use this feature.");
+        if (!permissionResult.granted) {
+          Alert.alert("Permission required", "Gallery permission is needed.");
           return;
         }
+
         result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
           allowsEditing: true,
@@ -66,26 +96,36 @@ export default function EditItemScreen() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedItem || !title || !price || !quantity || !imageUri) {
-      Alert.alert("All fields are required", "Please fill out all fields and select an image.");
+      Alert.alert("All fields are required");
       return;
     }
 
-    const formData = {
-      id: selectedItem.id,
-      image: imageUri,
-      title,
-      price: parseFloat(price),
-      quantity: parseInt(quantity),
-    };
+    try {
+      await db.withTransactionAsync(async () => {
+        await db.runAsync(
+          `UPDATE products SET image = ?, title = ?, price = ?, quantity = ? WHERE id = ?`,
+          [imageUri, title, parseFloat(price), parseInt(quantity), selectedItem.id]
+        );
+      });
 
-    console.log("Edit item:", formData);
-    Alert.alert("Success", `Item ${title} updated successfully!`);
+      Alert.alert("Success", `Item '${title}' updated successfully!`);
+      fetchItems();
+      setSelectedItem(null);
+    } catch (error) {
+      console.error("Update error:", error);
+      Alert.alert("Error", "Failed to update item");
+    }
   };
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={24} color={Theme.Colors.textPrimary} />
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+
       <Text style={styles.heading}>Edit Item</Text>
 
       <View style={styles.searchContainer}>
@@ -99,19 +139,15 @@ export default function EditItemScreen() {
       {!selectedItem ? (
         <FlatList
           data={filteredItems}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id?.toString() ?? Math.random().toString()}
           renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={styles.itemCard}
-              onPress={() => handleItemSelect(item)}
-            >
+            <TouchableOpacity style={styles.itemCard} onPress={() => handleItemSelect(item)}>
               <Text style={styles.itemTitle}>{item.title}</Text>
               <Text style={styles.itemDetails}>
                 Price: ₹{item.price} | Quantity: {item.quantity}
               </Text>
             </TouchableOpacity>
           )}
-          style={styles.list}
         />
       ) : (
         <View style={styles.form}>
@@ -123,20 +159,14 @@ export default function EditItemScreen() {
                 <Text style={styles.placeholderText}>No image selected</Text>
               </View>
             )}
-            
+
             <View style={styles.imageButtonsContainer}>
-              <TouchableOpacity 
-                style={styles.imageButton} 
-                onPress={() => pickImage('camera')}
-              >
+              <TouchableOpacity style={styles.imageButton} onPress={() => pickImage("camera")}>
                 <Ionicons name="camera" size={24} color={Theme.Colors.primary} />
                 <Text style={styles.buttonLabel}>Camera</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={styles.imageButton}
-                onPress={() => pickImage('gallery')}
-              >
+              <TouchableOpacity style={styles.imageButton} onPress={() => pickImage("gallery")}>
                 <Ionicons name="images" size={24} color={Theme.Colors.primary} />
                 <Text style={styles.buttonLabel}>Gallery</Text>
               </TouchableOpacity>
@@ -184,18 +214,26 @@ const styles = StyleSheet.create({
     padding: Theme.Spacing.lg,
     backgroundColor: Theme.Colors.background,
   },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Theme.Spacing.sm,
+  },
+  backButtonText: {
+    marginLeft: 8,
+    fontFamily: Theme.Font.medium,
+    fontSize: Theme.Font.size.md,
+    color: Theme.Colors.textPrimary,
+  },
   heading: {
     fontSize: Theme.Font.size.xl,
     fontFamily: Theme.Font.bold,
     color: Theme.Colors.textPrimary,
     marginBottom: Theme.Spacing.lg,
-    textAlign: 'center',
+    textAlign: "center",
   },
   searchContainer: {
     marginBottom: Theme.Spacing.md,
-  },
-  list: {
-    flex: 1,
   },
   itemCard: {
     backgroundColor: Theme.Colors.surface,
@@ -222,18 +260,18 @@ const styles = StyleSheet.create({
     marginBottom: Theme.Spacing.lg,
   },
   image: {
-    width: '100%',
+    width: "100%",
     height: 200,
     borderRadius: Theme.Radius.lg,
     marginBottom: Theme.Spacing.md,
   },
   placeholderContainer: {
-    width: '100%',
+    width: "100%",
     height: 200,
     backgroundColor: Theme.Colors.surface,
     borderRadius: Theme.Radius.lg,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: Theme.Spacing.md,
     borderWidth: 1,
     borderColor: Theme.Colors.border,
@@ -243,16 +281,16 @@ const styles = StyleSheet.create({
     fontFamily: Theme.Font.medium,
   },
   imageButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginTop: Theme.Spacing.sm,
   },
   imageButton: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: Theme.Colors.surface,
     padding: Theme.Spacing.md,
     borderRadius: Theme.Radius.md,
-    width: '45%',
+    width: "45%",
   },
   buttonLabel: {
     marginTop: Theme.Spacing.xs,
@@ -273,7 +311,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.Colors.primary,
     padding: Theme.Spacing.md,
     borderRadius: Theme.Radius.md,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: Theme.Spacing.md,
   },
   submitButtonText: {
